@@ -509,9 +509,9 @@ if __name__ == "__main__":
         title="SGIP — Sistema de Gestión de Inventario para Plantas",
         url=HTML_PATH,
         js_api=api,
-        width=1440,
-        height=900,
-        min_size=(1024, 680),
+        width=1280,
+        height=720,
+        min_size=(1024, 640),
         resizable=True,
     )
     webview.start(debug=False)

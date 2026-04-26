@@ -104,6 +104,12 @@ Los materiales con código ya existente en la base de datos se omiten sin error.
 
 ---
 
+## Licencia
+
+MIT — libre para usar, modificar y distribuir. Ver [LICENSE](LICENSE).
+
+---
+
 ## Desarrollado por
 
-**Ing. Moises Jimenez** — Corpoelec
+**Br. Moises Jimenez** — Corpoelec

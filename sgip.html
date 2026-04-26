@@ -198,6 +198,31 @@ body{font-family:var(--font-sans);color:var(--fg);background:var(--bg-app);font-
 
 /* Loading overlay */
 .loading-overlay{position:fixed;inset:0;background:var(--bg-app);display:grid;place-items:center;z-index:999;font-family:var(--font-mono);color:var(--fg-faint);font-size:13px;gap:12px;}
+
+/* ── Responsive: pantallas 1280×720 y 1366×768 ────────────────────────────── */
+@media (max-height: 768px) {
+  :root { --row-h:34px; --pad:12px; }
+  .toolbar { height:44px; }
+  .toolbar .search { width:240px; }
+  .sidebar .brand { padding:10px 16px 8px; }
+  .sidebar .brand .corp-logo { height:42px; }
+  .sidebar .group-label { padding:8px 16px 4px; }
+  .nav button { padding:5px 10px; }
+  .statusbar { height:20px; font-size:10.5px; }
+  .stat { padding:10px 14px; }
+  .stat .value { font-size:22px; }
+  .stat .delta { font-size:10.5px; }
+  .stats { gap:8px; }
+  .panel-head { padding:9px 14px; }
+  .panel-body { padding:12px; }
+  .tbl thead th { padding:6px 10px; }
+  .tbl tbody td { padding:6px 10px; }
+  .modal-body { max-height:calc(100vh - 148px); }
+  .twopane { grid-template-columns:1fr 380px; }
+  .empty { padding:28px; }
+  .kv { row-gap:8px; }
+  .tabs button { padding:8px 10px; }
+}
 </style>
 </head>
 <body>
@@ -1353,7 +1378,10 @@ function ConfigScreen({ dbInfo, onRefresh, dark, setDark, showToast }) {
             </div>
             <div style={{fontSize:13,color:"var(--fg-muted)",lineHeight:1.6}}>
               Desarrollado por<br/>
-              <span style={{fontWeight:600,fontSize:14,color:"var(--fg)"}}>Ing. Moises Jimenez</span>
+              <span style={{fontWeight:600,fontSize:14,color:"var(--fg)"}}>Br. Moises Jimenez</span>
+            </div>
+            <div style={{fontSize:11,color:"var(--fg-faint)",fontFamily:"var(--font-mono)"}}>
+              Licencia MIT · código abierto
             </div>
           </div>
           <div className="modal-foot">
