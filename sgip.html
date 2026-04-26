@@ -99,7 +99,7 @@ body{font-family:var(--font-sans);color:var(--fg);background:var(--bg-app);font-
 .toolbar .search{display:flex;align-items:center;gap:8px;background:var(--bg-subtle);border:1px solid var(--line);border-radius:6px;padding:0 10px;width:340px;height:32px;}
 .toolbar .search input{all:unset;flex:1;font-size:13px;color:var(--fg);}
 .toolbar .search input::placeholder{color:var(--fg-faint);}
-.toolbar .search .shortcut{font-family:var(--font-mono);font-size:10.5px;color:var(--fg-faint);border:1px solid var(--line);border-radius:3px;padding:1px 5px;background:var(--bg-window);}
+
 .btn{all:unset;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg-window);color:var(--fg);font-size:13px;cursor:default;font-weight:500;}
 .btn:hover{background:var(--bg-hover);}
 .btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);}
@@ -703,7 +703,6 @@ function Inventario({ materiales, ubicaciones, onRefresh }) {
         <div className="search">
           <Icon name="search"/>
           <input placeholder="Buscar por código, nombre, descripción…" value={query} onChange={e => setQuery(e.target.value)}/>
-          <span className="shortcut">Ctrl K</span>
         </div>
         <button className="btn btn-sm" onClick={exportar}><Icon name="download"/>Exportar</button>
         <button className="btn btn-primary btn-sm" onClick={() => setModal("new")}><Icon name="plus"/>Nuevo material</button>
