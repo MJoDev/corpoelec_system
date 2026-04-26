@@ -1,0 +1,30 @@
+# PyInstaller output
+dist/
+build/
+*.spec
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Base de datos y backups (datos de usuario, no van al repo)
+*.db
+sgip_backup_*.db
+
+# Imágenes subidas por el usuario
+assets/
+
+# Exportaciones generadas
+SGIP_inventario_*.xlsx
+SGIP_kardex_*.xlsx
+SGIP_kardex_*.pdf
+
+# Logo antiguo reemplazado
+images.png
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db

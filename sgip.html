@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SGIP — Sistema de Gestión de Inventario para Plantas</title>
+<script src="static/react.min.js"></script>
+<script src="static/react-dom.min.js"></script>
+<script src="static/babel.min.js"></script>
+<style>
+:root {
+  --bg-app: oklch(0.97 0.003 240);
+  --bg-window: oklch(0.995 0.002 240);
+  --bg-sidebar: oklch(0.975 0.004 240);
+  --bg-panel: oklch(0.985 0.003 240);
+  --bg-subtle: oklch(0.965 0.004 240);
+  --bg-hover: oklch(0.955 0.006 240);
+  --bg-selected: oklch(0.945 0.02 240);
+  --line: oklch(0.9 0.006 240);
+  --line-strong: oklch(0.82 0.008 240);
+  --fg: oklch(0.22 0.008 240);
+  --fg-muted: oklch(0.48 0.008 240);
+  --fg-faint: oklch(0.62 0.008 240);
+  --accent-hue: 240;
+  --accent: oklch(0.55 0.11 var(--accent-hue));
+  --accent-soft: oklch(0.94 0.04 var(--accent-hue));
+  --accent-fg: oklch(0.99 0 0);
+  --ok: oklch(0.62 0.11 155);
+  --ok-soft: oklch(0.94 0.04 155);
+  --warn: oklch(0.72 0.12 75);
+  --warn-soft: oklch(0.95 0.05 75);
+  --danger: oklch(0.58 0.16 25);
+  --danger-soft: oklch(0.94 0.04 25);
+  --info: oklch(0.6 0.1 240);
+  --info-soft: oklch(0.94 0.04 240);
+  --row-h: 40px;
+  --pad: 16px;
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --shadow-window: 0 20px 60px -20px rgba(15,20,40,0.35), 0 2px 8px rgba(15,20,40,0.08);
+  --shadow-panel: 0 1px 2px rgba(15,20,40,0.04);
+  --shadow-pop: 0 8px 24px -6px rgba(15,20,40,0.18);
+  --font-sans: "Segoe UI Variable","Segoe UI",system-ui,-apple-system,sans-serif;
+  --font-mono: ui-monospace,"SF Mono",Consolas,monospace;
+}
+[data-theme="dark"] {
+  --bg-app: oklch(0.18 0.008 240);
+  --bg-window: oklch(0.22 0.008 240);
+  --bg-sidebar: oklch(0.205 0.008 240);
+  --bg-panel: oklch(0.235 0.008 240);
+  --bg-subtle: oklch(0.26 0.008 240);
+  --bg-hover: oklch(0.28 0.01 240);
+  --bg-selected: oklch(0.32 0.03 240);
+  --line: oklch(0.32 0.008 240);
+  --line-strong: oklch(0.4 0.01 240);
+  --fg: oklch(0.95 0.003 240);
+  --fg-muted: oklch(0.72 0.006 240);
+  --fg-faint: oklch(0.58 0.006 240);
+  --accent-soft: oklch(0.32 0.06 var(--accent-hue));
+  --ok-soft: oklch(0.3 0.05 155);
+  --warn-soft: oklch(0.32 0.06 75);
+  --danger-soft: oklch(0.32 0.06 25);
+  --info-soft: oklch(0.3 0.05 240);
+  --shadow-window: 0 30px 80px -20px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-pop: 0 8px 24px -6px rgba(0,0,0,0.4);
+}
+[data-density="compact"] { --row-h:32px; --pad:12px; }
+[data-density="comfortable"] { --row-h:48px; --pad:20px; }
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{font-family:var(--font-sans);color:var(--fg);background:var(--bg-app);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden;}
+.desktop{width:100vw;height:100vh;overflow:hidden;background:var(--bg-window);}
+.win{width:100%;height:100%;background:var(--bg-window);display:grid;grid-template-rows:1fr 24px;overflow:hidden;}
+.statusbar{display:flex;align-items:center;gap:16px;padding:0 12px;background:var(--bg-sidebar);border-top:1px solid var(--line);font-size:11px;color:var(--fg-muted);font-family:var(--font-mono);}
+.statusbar .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:6px;}
+.shell{display:grid;grid-template-columns:232px 1fr;overflow:hidden;min-height:0;}
+.sidebar{background:var(--bg-sidebar);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;}
+.sidebar .brand{padding:16px 16px 12px;display:flex;align-items:center;}
+.sidebar .brand .corp-logo{height:50px;width:auto;display:block;max-width:100%;}
+[data-theme="dark"] .sidebar .brand .corp-logo{filter:brightness(0) invert(1);}
+
+.sidebar .group-label{font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:var(--fg-faint);padding:14px 16px 6px;font-family:var(--font-mono);font-weight:500;}
+.nav{padding:0 8px;display:flex;flex-direction:column;gap:1px;}
+.nav button{all:unset;display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;cursor:default;font-size:13.5px;color:var(--fg);}
+.nav button:hover{background:var(--bg-hover);}
+.nav button.active{background:var(--bg-selected);color:var(--fg);font-weight:500;}
+.nav button .ic{width:16px;height:16px;color:var(--fg-muted);flex:0 0 16px;}
+.nav button.active .ic{color:var(--accent);}
+.nav button .count{margin-left:auto;font-size:11px;color:var(--fg-faint);font-family:var(--font-mono);}
+.nav button.active .count{color:var(--accent);}
+.sidebar .spacer{flex:1;}
+.main{display:flex;flex-direction:column;overflow:hidden;min-height:0;background:var(--bg-window);}
+.toolbar{height:52px;padding:0 var(--pad);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--bg-window);}
+.toolbar h1{font-size:16px;font-weight:600;margin:0;letter-spacing:-0.01em;}
+.toolbar .crumbs{display:flex;align-items:center;gap:6px;color:var(--fg-faint);font-size:12px;font-family:var(--font-mono);}
+.toolbar .crumbs .sep{opacity:0.5;}
+.toolbar .spacer{flex:1;}
+.toolbar .search{display:flex;align-items:center;gap:8px;background:var(--bg-subtle);border:1px solid var(--line);border-radius:6px;padding:0 10px;width:340px;height:32px;}
+.toolbar .search input{all:unset;flex:1;font-size:13px;color:var(--fg);}
+.toolbar .search input::placeholder{color:var(--fg-faint);}
+.toolbar .search .shortcut{font-family:var(--font-mono);font-size:10.5px;color:var(--fg-faint);border:1px solid var(--line);border-radius:3px;padding:1px 5px;background:var(--bg-window);}
+.btn{all:unset;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg-window);color:var(--fg);font-size:13px;cursor:default;font-weight:500;}
+.btn:hover{background:var(--bg-hover);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);}
+.btn-primary:hover{filter:brightness(1.05);background:var(--accent);}
+.btn-ghost{border-color:transparent;background:transparent;}
+.btn-ghost:hover{background:var(--bg-hover);}
+.btn-sm{height:26px;padding:0 8px;font-size:12px;}
+.btn-danger{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);}
+.btn-danger:hover{background:var(--danger);color:white;}
+.btn .ic{width:14px;height:14px;}
+.body{flex:1;overflow:auto;padding:var(--pad);min-height:0;}
+.body.flush{padding:0;}
+.panel{background:var(--bg-panel);border:1px solid var(--line);border-radius:8px;}
+.panel-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;}
+.panel-head h2{font-size:13px;font-weight:600;margin:0;letter-spacing:-0.005em;}
+.panel-head .sub{font-size:11.5px;color:var(--fg-faint);font-family:var(--font-mono);}
+.panel-body{padding:16px;}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--fg-faint);font-family:var(--font-mono);font-weight:500;padding:8px 12px;background:var(--bg-subtle);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1;}
+.tbl tbody td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle;height:var(--row-h);}
+.tbl tbody tr{cursor:default;}
+.tbl tbody tr:hover{background:var(--bg-hover);}
+.tbl tbody tr.selected{background:var(--bg-selected);}
+.tbl .num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+.tbl .mono{font-family:var(--font-mono);font-size:12px;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:3px;font-size:11px;font-weight:500;font-family:var(--font-mono);letter-spacing:0.01em;}
+.badge.ok{background:var(--ok-soft);color:var(--ok);}
+.badge.warn{background:var(--warn-soft);color:var(--warn);}
+.badge.danger{background:var(--danger-soft);color:var(--danger);}
+.badge.info{background:var(--info-soft);color:var(--info);}
+.badge.neutral{background:var(--bg-subtle);color:var(--fg-muted);border:1px solid var(--line);}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.stockbar{position:relative;height:4px;border-radius:2px;background:var(--bg-subtle);overflow:hidden;min-width:80px;}
+.stockbar>div{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:2px;}
+.stockbar.low>div{background:var(--warn);}
+.stockbar.critical>div{background:var(--danger);}
+.imgph{background:repeating-linear-gradient(135deg,var(--bg-subtle) 0 8px,var(--bg-panel) 8px 16px);border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;color:var(--fg-faint);font-family:var(--font-mono);font-size:10.5px;text-align:center;padding:8px;}
+.filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.pill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:14px;border:1px solid var(--line);background:var(--bg-window);color:var(--fg);font-size:12px;cursor:default;}
+.pill:hover{background:var(--bg-hover);}
+.pill.active{background:var(--fg);color:var(--bg-window);border-color:var(--fg);}
+.kv{display:grid;grid-template-columns:130px 1fr;row-gap:10px;font-size:13px;}
+.kv dt{color:var(--fg-faint);font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;font-family:var(--font-mono);align-self:center;}
+.kv dd{margin:0;color:var(--fg);}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat{background:var(--bg-panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;}
+.stat .label{font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--fg-faint);font-family:var(--font-mono);display:flex;align-items:center;gap:6px;}
+.stat .value{font-size:28px;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;margin-top:4px;}
+.stat .delta{font-size:11.5px;color:var(--fg-muted);font-family:var(--font-mono);margin-top:2px;}
+.stat .delta.up{color:var(--ok);}
+.stat .delta.down{color:var(--danger);}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--fg-faint);font-family:var(--font-mono);font-weight:500;}
+.field input,.field select,.field textarea{all:unset;border:1px solid var(--line);background:var(--bg-window);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--fg);font-family:var(--font-sans);}
+.field textarea{min-height:72px;resize:vertical;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.twopane{display:grid;grid-template-columns:1fr 420px;height:100%;min-height:0;}
+.twopane .list{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;}
+.twopane .detail{overflow:auto;background:var(--bg-panel);}
+.twopane .list-body{flex:1;overflow:auto;min-height:0;}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);padding:0 var(--pad);}
+.tabs button{all:unset;padding:10px 12px;font-size:12.5px;color:var(--fg-muted);border-bottom:2px solid transparent;cursor:default;margin-bottom:-1px;}
+.tabs button:hover{color:var(--fg);}
+.tabs button.on{color:var(--fg);border-bottom-color:var(--accent);font-weight:500;}
+.ic{stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;width:16px;height:16px;flex:none;}
+.stat .label .ic{width:13px;height:13px;}
+.panel-head>.ic{width:14px;height:14px;color:var(--fg-muted);}
+.backdrop{position:fixed;inset:0;background:rgba(10,15,30,0.35);display:grid;place-items:center;z-index:100;}
+[data-theme="dark"] .backdrop{background:rgba(0,0,0,0.6);}
+.modal{width:520px;background:var(--bg-window);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-window);overflow:hidden;}
+.modal-wide{width:680px;}
+.modal-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;}
+.modal-head h3{margin:0;font-size:14px;font-weight:600;}
+.modal-head .modal-close{margin-left:auto;all:unset;cursor:default;color:var(--fg-muted);padding:4px;}
+.modal-head .modal-close:hover{color:var(--fg);}
+.modal-body{padding:18px;display:flex;flex-direction:column;gap:14px;max-height:70vh;overflow-y:auto;}
+.modal-foot{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;background:var(--bg-sidebar);}
+.toggle{position:relative;display:inline-flex;width:40px;height:22px;flex-shrink:0;cursor:default;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{position:absolute;inset:0;background:var(--line);border-radius:11px;transition:background 0.18s;}
+.toggle input:checked+.toggle-track{background:var(--accent);}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform 0.18s;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,0.28);}
+.toggle input:checked~.toggle-thumb{transform:translateX(18px);}
+.empty{display:grid;place-items:center;padding:48px;color:var(--fg-faint);font-size:12.5px;font-family:var(--font-mono);}
+.toast{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg-window);padding:8px 18px;border-radius:6px;font-size:13px;font-weight:500;z-index:200;box-shadow:var(--shadow-pop);}
+.toast.err{background:var(--danger);color:white;}
+::-webkit-scrollbar{width:12px;height:12px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:oklch(0.85 0.006 240);border-radius:6px;border:3px solid var(--bg-window);}
+[data-theme="dark"] ::-webkit-scrollbar-thumb{background:oklch(0.38 0.008 240);}
+::-webkit-scrollbar-thumb:hover{background:oklch(0.78 0.008 240);}
+
+/* Spinner */
+.spinner{width:20px;height:20px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Loading overlay */
+.loading-overlay{position:fixed;inset:0;background:var(--bg-app);display:grid;place-items:center;z-index:999;font-family:var(--font-mono);color:var(--fg-faint);font-size:13px;gap:12px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+// ─── Icons ────────────────────────────────────────────────────────────────────
+const I = {
+  dashboard: <svg viewBox="0 0 16 16" className="ic"><rect x="2" y="2" width="5.5" height="6"/><rect x="2" y="10" width="5.5" height="4"/><rect x="9.5" y="2" width="4.5" height="4"/><rect x="9.5" y="8" width="4.5" height="6"/></svg>,
+  box: <svg viewBox="0 0 16 16" className="ic"><path d="M2 5l6-3 6 3v6l-6 3-6-3z"/><path d="M2 5l6 3 6-3M8 8v6"/></svg>,
+  move: <svg viewBox="0 0 16 16" className="ic"><path d="M3 6h8M8 3l3 3-3 3"/><path d="M13 10H5m3 3l-3-3 3-3"/></svg>,
+  search: <svg viewBox="0 0 16 16" className="ic"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>,
+  history: <svg viewBox="0 0 16 16" className="ic"><path d="M2 4V1M2 4h3M2 4a6 6 0 1 1-1.2 6"/><path d="M8 4.5v4l2.5 1.5"/></svg>,
+  settings: <svg viewBox="0 0 16 16" className="ic"><circle cx="8" cy="8" r="2.2"/><path d="M8 1v2m0 10v2m7-7h-2M3 8H1m11.2-4.2l-1.4 1.4M5.2 10.8l-1.4 1.4m0-8.4l1.4 1.4m5.6 5.6l1.4 1.4"/></svg>,
+  plus: <svg viewBox="0 0 16 16" className="ic"><path d="M8 3v10M3 8h10"/></svg>,
+  download: <svg viewBox="0 0 16 16" className="ic"><path d="M8 2v8m-3-3l3 3 3-3"/><path d="M3 12v1.5h10V12"/></svg>,
+  filter: <svg viewBox="0 0 16 16" className="ic"><path d="M2 3h12l-4.5 6v4l-3 1.5V9z"/></svg>,
+  chevron: <svg viewBox="0 0 16 16" className="ic"><path d="M6 4l4 4-4 4"/></svg>,
+  arrowIn: <svg viewBox="0 0 16 16" className="ic"><path d="M3 8h8m-3-3l3 3-3 3"/><path d="M13 3v10"/></svg>,
+  arrowOut: <svg viewBox="0 0 16 16" className="ic"><path d="M13 8H5m3-3l-3 3 3 3"/><path d="M3 3v10"/></svg>,
+  swap: <svg viewBox="0 0 16 16" className="ic"><path d="M3 6h10l-2-2M13 10H3l2 2"/></svg>,
+  bell: <svg viewBox="0 0 16 16" className="ic"><path d="M4 11V7a4 4 0 0 1 8 0v4l1 2H3z"/><path d="M6.5 14a1.5 1.5 0 0 0 3 0"/></svg>,
+  close: <svg viewBox="0 0 16 16" className="ic"><path d="M4 4l8 8M12 4l-8 8"/></svg>,
+  edit: <svg viewBox="0 0 16 16" className="ic"><path d="M12 2l2 2-8 8-3 1 1-3z"/></svg>,
+  location: <svg viewBox="0 0 16 16" className="ic"><path d="M8 14s-5-4.5-5-8a5 5 0 0 1 10 0c0 3.5-5 8-5 8z"/><circle cx="8" cy="6" r="1.8"/></svg>,
+  image: <svg viewBox="0 0 16 16" className="ic"><rect x="2" y="3" width="12" height="10" rx="1"/><circle cx="6" cy="7" r="1.2"/><path d="M2 11l3.5-3L9 11l2.5-2L14 11"/></svg>,
+  camera: <svg viewBox="0 0 16 16" className="ic"><path d="M2 5h2l1-1.5h6L12 5h2v8H2z"/><circle cx="8" cy="9" r="2.5"/></svg>,
+  warn: <svg viewBox="0 0 16 16" className="ic"><path d="M8 2l6.5 11H1.5z"/><path d="M8 6v3M8 11v.5"/></svg>,
+  check: <svg viewBox="0 0 16 16" className="ic"><path d="M3 8.5l3 3 7-7"/></svg>,
+  trash: <svg viewBox="0 0 16 16" className="ic"><path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/></svg>,
+  sort: <svg viewBox="0 0 16 16" className="ic"><path d="M5 3v10M2 6l3-3 3 3M11 13V3M14 10l-3 3-3-3"/></svg>,
+};
+
+const Icon = ({ name }) => I[name] || null;
+
+// ─── Shared UI helpers ────────────────────────────────────────────────────────
+function StockBar({ stock, min }) {
+  const ratio = Math.min(1, stock / Math.max(min * 2, 1));
+  const cls = stock < min ? "critical" : stock < min * 1.5 ? "low" : "";
+  return <div className={`stockbar ${cls}`}><div style={{ width: `${ratio * 100}%` }}/></div>;
+}
+
+function EstadoBadge({ estado }) {
+  const map = { "Bueno": "ok", "Dañado": "danger", "En Reparación": "warn" };
+  return <span className={`badge ${map[estado] || "neutral"}`}><span className="dot"/>{estado}</span>;
+}
+
+function StockBadge({ stock, min }) {
+  if (stock === 0) return <span className="badge danger"><span className="dot"/>Agotado</span>;
+  if (stock < min) return <span className="badge danger">Bajo</span>;
+  if (stock < min * 1.5) return <span className="badge warn">Alerta</span>;
+  return null;
+}
+
+function Avatar({ name, size = 24 }) {
+  const initials = (name || "?").split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
+  return <span className="avatar" style={{ width: size, height: size, fontSize: Math.round(size * 0.42) }}>{initials}</span>;
+}
+
+function Toggle({ checked, onChange }) {
+  return (
+    <label className="toggle">
+      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)}/>
+      <span className="toggle-track"/>
+      <span className="toggle-thumb"/>
+    </label>
+  );
+}
+
+function ubText(u) {
+  if (!u) return "—";
+  return `${u.modulo_pasillo} · ${u.estanteria} · ${u.nivel_ubicacion}`;
+}
+
+function ubTextFull(u) {
+  if (!u) return "—";
+  return `${u.planta_sede} / ${u.modulo_pasillo} / ${u.estanteria} / ${u.nivel_ubicacion}`;
+}
+
+function matUbText(m) {
+  if (!m.modulo_pasillo) return "—";
+  return `${m.modulo_pasillo} · ${m.estanteria} · ${m.nivel_ubicacion}`;
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function Toast({ msg, type, onDone }) {
+  React.useEffect(() => { const t = setTimeout(onDone, 2800); return () => clearTimeout(t); }, []);
+  return <div className={`toast${type === 'err' ? ' err' : ''}`}>{msg}</div>;
+}
+
+// ─── API wrapper ──────────────────────────────────────────────────────────────
+function getApi() {
+  return window.pywebview?.api;
+}
+
+// ─── Window chrome ────────────────────────────────────────────────────────────
+function Window({ children, stats }) {
+  const now = new Date().toLocaleString("es-VE", { dateStyle:"short", timeStyle:"short" });
+  return (
+    <div className="win">
+      {children}
+      <div className="statusbar">
+        <span><span className="dot"/>sgip_data.db (local)</span>
+        <span>{stats.mat_count} materiales · {stats.mov_count} movimientos</span>
+        <span style={{marginLeft:"auto"}}>v1.0.0 — portable</span>
+        <span>{now}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+function Sidebar({ route, setRoute, lowCount }) {
+  const items = [
+    { id:"dashboard",   label:"Panel",       icon:"dashboard" },
+    { id:"inventario",  label:"Inventario",  icon:"box" },
+    { id:"movimientos", label:"Movimientos", icon:"move" },
+    { id:"consultas",   label:"Consultas",   icon:"search" },
+    { id:"kardex",      label:"Kárdex",      icon:"history" },
+  ];
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <img src="logo-servicio-corpoelec.im1761941416671im.avif" alt="Corpoelec" className="corp-logo"/>
+      </div>
+      <div className="group-label">Operación</div>
+      <nav className="nav">
+        {items.map(it => (
+          <button key={it.id} className={route === it.id ? "active" : ""} onClick={() => setRoute(it.id)}>
+            <Icon name={it.icon}/>
+            <span>{it.label}</span>
+            {it.id === "inventario" && lowCount > 0 &&
+              <span className="count" style={{color:"var(--warn)"}}>{lowCount} bajo</span>}
+          </button>
+        ))}
+      </nav>
+      <div className="group-label">Sistema</div>
+      <nav className="nav">
+        <button className={route === "config" ? "active" : ""} onClick={() => setRoute("config")}>
+          <Icon name="settings"/><span>Configuración</span>
+        </button>
+      </nav>
+    </aside>
+  );
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+function Dashboard({ materiales, movimientos, goto }) {
+  const total = materiales.length;
+  const totalUnits = materiales.reduce((s, m) => s + m.stock_actual, 0);
+  const bajos = materiales.filter(m => m.stock_actual < m.stock_minimo);
+  const danados = materiales.filter(m => m.estado !== "Bueno");
+  const hoy = new Date().toISOString().slice(0, 10);
+  const movHoy = movimientos.filter(m => m.fecha_hora?.startsWith(hoy));
+
+  return (
+    <div>
+      <div className="toolbar">
+        <div><h1>Panel</h1></div>
+        <div className="crumbs"><span>Corpoelec</span><span className="sep">/</span><span>Resumen general</span></div>
+        <div className="spacer"/>
+        <button className="btn btn-ghost btn-sm" onClick={() => getApi().exportar_excel("inventario").then(r => r.ok && getApi().abrir_carpeta_exportacion())}><Icon name="download"/>Exportar resumen</button>
+        <button className="btn btn-primary btn-sm" onClick={() => goto("movimientos")}><Icon name="plus"/>Nuevo movimiento</button>
+      </div>
+      <div className="body">
+        <div className="stats">
+          <div className="stat">
+            <div className="label"><Icon name="box"/>Materiales registrados</div>
+            <div className="value">{total}</div>
+            <div className="delta">{totalUnits.toLocaleString("es-VE")} unidades en stock</div>
+          </div>
+          <div className="stat">
+            <div className="label" style={{color:"var(--warn)"}}><Icon name="warn"/>Stock bajo mínimo</div>
+            <div className="value" style={{color:"var(--warn)"}}>{bajos.length}</div>
+            <div className="delta">requiere revisión</div>
+          </div>
+          <div className="stat">
+            <div className="label" style={{color:"var(--danger)"}}><Icon name="warn"/>Dañado / En reparación</div>
+            <div className="value" style={{color:"var(--danger)"}}>{danados.length}</div>
+            <div className="delta">activos no operativos</div>
+          </div>
+          <div className="stat">
+            <div className="label"><Icon name="move"/>Movimientos hoy</div>
+            <div className="value">{movHoy.length}</div>
+            <div className="delta">registros del día</div>
+          </div>
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"1.3fr 1fr",gap:16,marginTop:16}}>
+          <div className="panel">
+            <div className="panel-head">
+              <Icon name="bell"/>
+              <h2>Alertas de stock</h2>
+              <span className="sub">{bajos.length} bajo el mínimo</span>
+              <div style={{marginLeft:"auto"}}>
+                <button className="btn btn-ghost btn-sm" onClick={() => goto("inventario")}>Ver todo <Icon name="chevron"/></button>
+              </div>
+            </div>
+            <table className="tbl">
+              <thead><tr><th>Código</th><th>Material</th><th>Stock/Mín.</th><th style={{width:120}}>Nivel</th><th>Estado</th></tr></thead>
+              <tbody>
+                {bajos.map(m => (
+                  <tr key={m.id} onClick={() => goto("inventario", m.id)}>
+                    <td className="mono">{m.codigo}</td>
+                    <td>{m.nombre}</td>
+                    <td className="num">
+                      <span style={{color: m.stock_actual===0 ? "var(--danger)" : "var(--warn)",fontWeight:500}}>{m.stock_actual}</span>
+                      <span style={{color:"var(--fg-faint)"}}> / {m.stock_minimo}</span>
+                    </td>
+                    <td><StockBar stock={m.stock_actual} min={m.stock_minimo}/></td>
+                    <td><StockBadge stock={m.stock_actual} min={m.stock_minimo}/></td>
+                  </tr>
+                ))}
+                {bajos.length === 0 && <tr><td colSpan="5" className="empty">Sin alertas — todos sobre mínimo</td></tr>}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="panel">
+            <div className="panel-head"><h2>Estado de activos</h2><span className="sub">clasificación del inventario</span></div>
+            <div className="panel-body">
+              {[
+                {estado:"Bueno",color:"var(--ok)",count:materiales.filter(m=>m.estado==="Bueno").length},
+                {estado:"En Reparación",color:"var(--warn)",count:materiales.filter(m=>m.estado==="En Reparación").length},
+                {estado:"Dañado",color:"var(--danger)",count:materiales.filter(m=>m.estado==="Dañado").length},
+              ].map(row => {
+                const pct = total ? (row.count / total * 100) : 0;
+                return (
+                  <div key={row.estado} style={{marginBottom:14}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontSize:12.5}}>
+                      <span>{row.estado}</span>
+                      <span className="num" style={{color:"var(--fg-muted)"}}>{row.count} <span style={{color:"var(--fg-faint)"}}>({pct.toFixed(0)}%)</span></span>
+                    </div>
+                    <div className="stockbar" style={{height:6}}><div style={{width:`${pct}%`,background:row.color}}/></div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="panel" style={{marginTop:16}}>
+          <div className="panel-head">
+            <h2>Movimientos recientes</h2>
+            <span className="sub">últimos registros</span>
+            <div style={{marginLeft:"auto"}}><button className="btn btn-ghost btn-sm" onClick={() => goto("kardex")}>Kárdex completo <Icon name="chevron"/></button></div>
+          </div>
+          <table className="tbl">
+            <thead><tr><th>Fecha</th><th>Tipo</th><th>Material</th><th>Cant.</th><th>Responsable</th><th>OT/Referencia</th></tr></thead>
+            <tbody>
+              {movimientos.slice(0, 8).map(mv => {
+                const tipoBadge = mv.tipo_movimiento==="Entrada" ? "ok" : mv.tipo_movimiento==="Salida" ? "info" : "warn";
+                const tipoIcon = mv.tipo_movimiento==="Entrada" ? "arrowIn" : mv.tipo_movimiento==="Salida" ? "arrowOut" : "swap";
+                return (
+                  <tr key={mv.id}>
+                    <td className="mono" style={{fontSize:11.5}}>{mv.fecha_hora?.slice(0,16)}</td>
+                    <td><span className={`badge ${tipoBadge}`}><Icon name={tipoIcon}/>{mv.tipo_movimiento}</span></td>
+                    <td>
+                      <div style={{fontWeight:500}}>{mv.nombre}</div>
+                      <div className="mono" style={{fontSize:11,color:"var(--fg-faint)"}}>{mv.codigo}</div>
+                    </td>
+                    <td className="num" style={{fontWeight:500}}>{mv.cantidad}</td>
+                    <td style={{fontSize:12.5}}>{mv.responsable_retiro}</td>
+                    <td style={{color:"var(--fg-muted)",fontSize:12.5}}>{mv.orden_trabajo_area}</td>
+                  </tr>
+                );
+              })}
+              {movimientos.length === 0 && <tr><td colSpan="6" className="empty">Sin movimientos registrados</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Material form modal (create / edit) ──────────────────────────────────────
+function MaterialModal({ material, ubicaciones, onClose, onSaved }) {
+  const editing = !!material;
+  const [form, setForm] = React.useState({
+    codigo: material?.codigo || "",
+    nombre: material?.nombre || "",
+    descripcion_tecnica: material?.descripcion_tecnica || "",
+    categoria: material?.categoria || "Rodamientos",
+    estado: material?.estado || "Bueno",
+    stock_actual: material?.stock_actual ?? 0,
+    stock_minimo: material?.stock_minimo ?? 0,
+    ubicacion_id: material?.ubicacion_id || (ubicaciones[0]?.id || ""),
+  });
+  const [err, setErr] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const save = async () => {
+    if (!form.codigo || !form.nombre) { setErr("Código y nombre son obligatorios"); return; }
+    setSaving(true); setErr("");
+    try {
+      let res;
+      if (editing) {
+        res = await getApi().editar_material(material.id, form.nombre, form.descripcion_tecnica,
+          form.categoria, form.estado, form.stock_actual, form.stock_minimo, form.ubicacion_id || null);
+      } else {
+        res = await getApi().crear_material(form.codigo, form.nombre, form.descripcion_tecnica,
+          form.categoria, form.estado, form.stock_actual, form.stock_minimo, form.ubicacion_id || null);
+      }
+      if (res.ok) onSaved();
+      else setErr(res.error || "Error al guardar");
+    } catch(ex) { setErr("Error de comunicación"); }
+    setSaving(false);
+  };
+
+  const CATS = ["Rodamientos","Filtros","Correas y Cadenas","Motores","Lubricantes","Sellos y Empaques","Herramientas","Tornillería","Eléctricos","Otros"];
+
+  return (
+    <div className="backdrop" onClick={onClose}>
+      <div className="modal modal-wide" onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <h3>{editing ? "Editar material" : "Nuevo material"}</h3>
+          <button className="modal-close" onClick={onClose}><Icon name="close"/></button>
+        </div>
+        <div className="modal-body">
+          {err && <div style={{padding:"8px 12px",background:"var(--danger-soft)",color:"var(--danger)",borderRadius:6,fontSize:12.5}}>{err}</div>}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <div className="field">
+              <label>Código *</label>
+              <input value={form.codigo} onChange={e => set("codigo", e.target.value)} disabled={editing} placeholder="RDM-6205-2RS"/>
+            </div>
+            <div className="field">
+              <label>Categoría</label>
+              <select value={form.categoria} onChange={e => set("categoria", e.target.value)}>
+                {CATS.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="field">
+            <label>Nombre *</label>
+            <input value={form.nombre} onChange={e => set("nombre", e.target.value)} placeholder="Nombre descriptivo del material"/>
+          </div>
+          <div className="field">
+            <label>Descripción técnica</label>
+            <textarea value={form.descripcion_tecnica} onChange={e => set("descripcion_tecnica", e.target.value)} placeholder="Especificaciones, dimensiones, uso…"/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+            <div className="field">
+              <label>Estado</label>
+              <select value={form.estado} onChange={e => set("estado", e.target.value)}>
+                <option>Bueno</option><option>Dañado</option><option>En Reparación</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>Stock actual</label>
+              <input type="number" min="0" value={form.stock_actual} onChange={e => set("stock_actual", e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>Stock mínimo</label>
+              <input type="number" min="0" value={form.stock_minimo} onChange={e => set("stock_minimo", e.target.value)}/>
+            </div>
+          </div>
+          <div className="field">
+            <label>Ubicación</label>
+            <select value={form.ubicacion_id} onChange={e => set("ubicacion_id", e.target.value)}>
+              <option value="">— Sin ubicación —</option>
+              {ubicaciones.map(u => (
+                <option key={u.id} value={u.id}>{ubTextFull(u)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="modal-foot">
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}>
+            {saving ? <span className="spinner"/> : <Icon name="check"/>}
+            {editing ? "Guardar cambios" : "Crear material"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Image attach modal ───────────────────────────────────────────────────────
+function ImagenModal({ material, onClose, onSaved }) {
+  const [path, setPath] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const [err, setErr] = React.useState("");
+
+  const pick = async () => {
+    const r = await getApi().seleccionar_imagen();
+    if (r.ok) setPath(r.path);
+  };
+
+  const save = async () => {
+    if (!path) { setErr("Seleccione una imagen primero"); return; }
+    setSaving(true);
+    const r = await getApi().subir_imagen(material.id, path);
+    if (r.ok) onSaved(r.ruta);
+    else setErr(r.error || "Error al copiar imagen");
+    setSaving(false);
+  };
+
+  return (
+    <div className="backdrop" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <h3>Adjuntar imagen — {material.nombre}</h3>
+          <button className="modal-close" onClick={onClose}><Icon name="close"/></button>
+        </div>
+        <div className="modal-body">
+          {err && <div style={{padding:"8px 12px",background:"var(--danger-soft)",color:"var(--danger)",borderRadius:6,fontSize:12.5}}>{err}</div>}
+          <div className="imgph" style={{height:140}} onClick={pick}>
+            {path ? <div style={{fontSize:11,color:"var(--fg-muted)",wordBreak:"break-all",padding:8}}>{path}</div>
+                  : <div><div style={{marginBottom:4}}>[ haga clic para seleccionar ]</div>imagen del material</div>}
+          </div>
+          <button className="btn btn-sm" onClick={pick}><Icon name="camera"/>Seleccionar archivo…</button>
+          {material.ruta_imagen && (
+            <div style={{fontSize:12,color:"var(--fg-faint)",fontFamily:"var(--font-mono)"}}>
+              Imagen actual: {material.ruta_imagen}
+            </div>
+          )}
+        </div>
+        <div className="modal-foot">
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary btn-sm" onClick={save} disabled={saving || !path}>
+            {saving ? <span className="spinner"/> : <Icon name="check"/>}Guardar imagen
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Inventario ───────────────────────────────────────────────────────────────
+function Inventario({ materiales, ubicaciones, onRefresh }) {
+  const [query, setQuery] = React.useState("");
+  const [cat, setCat] = React.useState("Todas");
+  const [est, setEst] = React.useState("Todos");
+  const [stockFilter, setStockFilter] = React.useState("Todos");
+  const [selectedId, setSelectedId] = React.useState(null);
+  const [modal, setModal] = React.useState(null); // null | "new" | "edit" | "img"
+
+  const CATS = ["Rodamientos","Filtros","Correas y Cadenas","Motores","Lubricantes","Sellos y Empaques","Herramientas","Tornillería","Eléctricos","Otros"];
+
+  const filtered = React.useMemo(() => {
+    return materiales.filter(m => {
+      if (cat !== "Todas" && m.categoria !== cat) return false;
+      if (est !== "Todos" && m.estado !== est) return false;
+      if (stockFilter === "Bajo" && m.stock_actual >= m.stock_minimo) return false;
+      if (stockFilter === "Agotado" && m.stock_actual > 0) return false;
+      if (query) {
+        const q = query.toLowerCase();
+        return m.codigo.toLowerCase().includes(q) || m.nombre.toLowerCase().includes(q) ||
+               (m.descripcion_tecnica||"").toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [materiales, query, cat, est, stockFilter]);
+
+  const selected = materiales.find(m => m.id === selectedId) || filtered[0] || materiales[0];
+
+  const exportar = async () => {
+    const r = await getApi().exportar_excel("inventario");
+    if (r.ok) { await getApi().abrir_carpeta_exportacion(); }
+  };
+
+  const saved = () => { setModal(null); onRefresh(); };
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100%",minHeight:0}}>
+      {modal === "new" && <MaterialModal ubicaciones={ubicaciones} onClose={() => setModal(null)} onSaved={saved}/>}
+      {modal === "edit" && selected && <MaterialModal material={selected} ubicaciones={ubicaciones} onClose={() => setModal(null)} onSaved={saved}/>}
+      {modal === "img" && selected && <ImagenModal material={selected} onClose={() => setModal(null)} onSaved={() => { setModal(null); onRefresh(); }}/>}
+
+      <div className="toolbar">
+        <h1>Inventario</h1>
+        <div className="crumbs"><span>Corpoelec</span><span className="sep">/</span><span>Catálogo de materiales</span></div>
+        <div className="spacer"/>
+        <div className="search">
+          <Icon name="search"/>
+          <input placeholder="Buscar por código, nombre, descripción…" value={query} onChange={e => setQuery(e.target.value)}/>
+          <span className="shortcut">Ctrl K</span>
+        </div>
+        <button className="btn btn-sm" onClick={exportar}><Icon name="download"/>Exportar</button>
+        <button className="btn btn-primary btn-sm" onClick={() => setModal("new")}><Icon name="plus"/>Nuevo material</button>
+      </div>
+
+      <div style={{padding:"10px var(--pad)",borderBottom:"1px solid var(--line)",display:"flex",gap:8,alignItems:"center",background:"var(--bg-window)",flexWrap:"wrap"}}>
+        <span style={{fontSize:10.5,textTransform:"uppercase",letterSpacing:"0.06em",color:"var(--fg-faint)",fontFamily:"var(--font-mono)"}}>Categoría</span>
+        <div className="filters">
+          {["Todas",...CATS].slice(0,6).map(c => (
+            <button key={c} className={`pill ${cat===c?"active":""}`} onClick={() => setCat(c)}>{c}</button>
+          ))}
+          <select className="pill" value={cat} onChange={e => setCat(e.target.value)} style={{appearance:"none"}}>
+            <option>Todas</option>
+            {CATS.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div style={{width:1,height:20,background:"var(--line)",margin:"0 6px"}}/>
+        <span style={{fontSize:10.5,textTransform:"uppercase",letterSpacing:"0.06em",color:"var(--fg-faint)",fontFamily:"var(--font-mono)"}}>Estado</span>
+        <div className="filters">
+          {["Todos","Bueno","Dañado","En Reparación"].map(e => (
+            <button key={e} className={`pill ${est===e?"active":""}`} onClick={() => setEst(e)}>{e}</button>
+          ))}
+        </div>
+        <div style={{width:1,height:20,background:"var(--line)",margin:"0 6px"}}/>
+        <div className="filters">
+          {["Todos","Bajo","Agotado"].map(s => (
+            <button key={s} className={`pill ${stockFilter===s?"active":""}`} onClick={() => setStockFilter(s)}>Stock: {s}</button>
+          ))}
+        </div>
+        <div style={{marginLeft:"auto",color:"var(--fg-faint)",fontFamily:"var(--font-mono)",fontSize:11}}>
+          {filtered.length} de {materiales.length} resultados
+        </div>
+      </div>
+
+      <div className="twopane" style={{flex:1}}>
+        <div className="list">
+          <div className="list-body">
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th style={{width:56}}></th>
+                  <th style={{width:150}}>Código</th>
+                  <th>Material</th>
+                  <th style={{width:140}}>Categoría</th>
+                  <th style={{width:120}}>Stock</th>
+                  <th style={{width:130}}>Estado</th>
+                  <th style={{width:180}}>Ubicación</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(m => (
+                  <tr key={m.id} className={selected?.id===m.id?"selected":""} onClick={() => setSelectedId(m.id)}>
+                    <td>
+                      {m.ruta_imagen
+                        ? <img src={m.ruta_imagen} style={{width:36,height:36,objectFit:"cover",borderRadius:4,border:"1px solid var(--line)"}}/>
+                        : <div className="imgph" style={{width:36,height:36,padding:0,fontSize:9}}><Icon name="image"/></div>}
+                    </td>
+                    <td className="mono" style={{fontSize:12}}>{m.codigo}</td>
+                    <td>
+                      <div style={{fontWeight:500}}>{m.nombre}</div>
+                      <div style={{color:"var(--fg-faint)",fontSize:11.5,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:380}}>{m.descripcion_tecnica}</div>
+                    </td>
+                    <td><span className="badge neutral">{m.categoria}</span></td>
+                    <td>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span className="num" style={{fontWeight:500,minWidth:28,textAlign:"right",color:m.stock_actual<m.stock_minimo?(m.stock_actual===0?"var(--danger)":"var(--warn)"):"inherit"}}>{m.stock_actual}</span>
+                        <span className="mono" style={{color:"var(--fg-faint)",fontSize:11}}>/{m.stock_minimo}</span>
+                        <StockBar stock={m.stock_actual} min={m.stock_minimo}/>
+                      </div>
+                    </td>
+                    <td><EstadoBadge estado={m.estado}/></td>
+                    <td className="mono" style={{fontSize:11.5,color:"var(--fg-muted)"}}>{matUbText(m)}</td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && <tr><td colSpan="7" className="empty">Sin resultados</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="detail">
+          {selected && (
+            <MaterialDetail m={selected} onEdit={() => setModal("edit")} onImg={() => setModal("img")} onDeleted={() => { setSelectedId(null); onRefresh(); }}/>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MaterialDetail({ m, onEdit, onImg, onDeleted }) {
+  const [tab, setTab] = React.useState("general");
+
+  const eliminar = async () => {
+    if (!confirm(`¿Eliminar "${m.nombre}"? Esta acción no se puede deshacer.`)) return;
+    const r = await getApi().eliminar_material(m.id);
+    if (r.ok) onDeleted();
+  };
+
+  return (
+    <div>
+      <div style={{padding:16,borderBottom:"1px solid var(--line)"}}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+          <div className="mono" style={{fontSize:11,color:"var(--fg-faint)",textTransform:"uppercase",letterSpacing:"0.06em"}}>{m.categoria}</div>
+          <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+            <button className="btn btn-sm btn-ghost" onClick={onEdit}><Icon name="edit"/></button>
+            <button className="btn btn-sm btn-danger btn-ghost" onClick={eliminar}><Icon name="trash"/></button>
+          </div>
+        </div>
+        <div style={{fontSize:18,fontWeight:600,letterSpacing:"-0.01em",marginTop:4}}>{m.nombre}</div>
+        <div className="mono" style={{fontSize:12,color:"var(--fg-muted)",marginTop:2}}>{m.codigo}</div>
+        <div style={{display:"flex",gap:6,marginTop:10}}>
+          <EstadoBadge estado={m.estado}/>
+          <StockBadge stock={m.stock_actual} min={m.stock_minimo}/>
+        </div>
+      </div>
+
+      <div className="tabs">
+        <button className={tab==="general"?"on":""} onClick={() => setTab("general")}>General</button>
+        <button className={tab==="ubicacion"?"on":""} onClick={() => setTab("ubicacion")}>Ubicación</button>
+      </div>
+
+      {tab === "general" && (
+        <div style={{padding:16}}>
+          {m.ruta_imagen
+            ? <img src={m.ruta_imagen} style={{width:"100%",height:160,objectFit:"cover",borderRadius:6,border:"1px solid var(--line)"}}/>
+            : <div className="imgph" style={{height:160}}><div><div style={{marginBottom:4,opacity:0.7}}>[ imagen ]</div>foto del material</div></div>}
+          <div style={{display:"flex",gap:6,marginTop:8}}>
+            <button className="btn btn-sm btn-ghost" onClick={onImg}><Icon name="camera"/>Adjuntar foto</button>
+          </div>
+          <h4 style={{margin:"18px 0 10px",fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:"var(--fg-faint)",fontFamily:"var(--font-mono)"}}>Información</h4>
+          <dl className="kv">
+            <dt>Descripción</dt><dd>{m.descripcion_tecnica || "—"}</dd>
+            <dt>Categoría</dt><dd>{m.categoria}</dd>
+          </dl>
+          <h4 style={{margin:"18px 0 10px",fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:"var(--fg-faint)",fontFamily:"var(--font-mono)"}}>Inventario</h4>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <div className="panel" style={{padding:12}}>
+              <div style={{fontSize:10.5,color:"var(--fg-faint)",fontFamily:"var(--font-mono)",textTransform:"uppercase",letterSpacing:"0.06em"}}>Stock actual</div>
+              <div style={{fontSize:24,fontWeight:600,letterSpacing:"-0.02em",fontVariantNumeric:"tabular-nums"}}>{m.stock_actual}</div>
+              <div style={{marginTop:6}}><StockBar stock={m.stock_actual} min={m.stock_minimo}/></div>
+            </div>
+            <div className="panel" style={{padding:12}}>
+              <div style={{fontSize:10.5,color:"var(--fg-faint)",fontFamily:"var(--font-mono)",textTransform:"uppercase",letterSpacing:"0.06em"}}>Stock mínimo</div>
+              <div style={{fontSize:24,fontWeight:600,letterSpacing:"-0.02em",fontVariantNumeric:"tabular-nums",color:"var(--fg-muted)"}}>{m.stock_minimo}</div>
+              <div style={{fontSize:11.5,color:"var(--fg-faint)",fontFamily:"var(--font-mono)",marginTop:6}}>
+                {m.stock_actual < m.stock_minimo ? `faltan ${m.stock_minimo - m.stock_actual}` : "sobre el umbral"}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "ubicacion" && (
+        <div style={{padding:16}}>
+          <h4 style={{margin:"0 0 10px",fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:"var(--fg-faint)",fontFamily:"var(--font-mono)"}}>Jerarquía</h4>
+          {[
+            {label:"Planta / Sede",    value:m.planta_sede},
+            {label:"Módulo / Pasillo", value:m.modulo_pasillo},
+            {label:"Estantería",       value:m.estanteria},
+            {label:"Nivel / Ubicación",value:m.nivel_ubicacion},
+          ].map((row, i) => (
+            <div key={row.label} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid var(--line)"}}>
+              <div className="mono" style={{width:24,textAlign:"center",color:"var(--fg-faint)",fontSize:11}}>{i+1}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10.5,color:"var(--fg-faint)",fontFamily:"var(--font-mono)",textTransform:"uppercase",letterSpacing:"0.06em"}}>{row.label}</div>
+                <div style={{fontWeight:500,marginTop:2}}>{row.value || "—"}</div>
+              </div>
+              <Icon name="location"/>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Movimiento modal ─────────────────────────────────────────────────────────
+function MovimientoModal({ tipo, materiales, ubicaciones, onClose, onSaved }) {
+  const [matId, setMatId] = React.useState(materiales[0]?.id || "");
+  const [cantidad, setCantidad] = React.useState(1);
+  const [responsable, setResponsable] = React.useState("");
+  const [otArea, setOtArea] = React.useState("");
+  const [ubDest, setUbDest] = React.useState(ubicaciones[0]?.id || "");
+  const [obs, setObs] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const [err, setErr] = React.useState("");
+
+  const mat = materiales.find(m => m.id === parseInt(matId));
+
+  const save = async () => {
+    if (!matId || cantidad < 1 || !responsable) { setErr("Material, cantidad y responsable son obligatorios"); return; }
+    setSaving(true); setErr("");
+    const r = await getApi().registrar_movimiento(
+      parseInt(matId), tipo, parseInt(cantidad), responsable,
+      `${otArea}${obs ? " — " + obs : ""}`,
+      tipo === "Transferencia" ? mat?.ubicacion_id : null,
+      tipo === "Transferencia" ? parseInt(ubDest) : null
+    );
+    if (r.ok) onSaved(r);
+    else setErr(r.error || "Error al registrar");
+    setSaving(false);
+  };
+
+  const tipoBadge = tipo==="Entrada"?"ok":tipo==="Salida"?"info":"warn";
+
+  return (
+    <div className="backdrop" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <span className={`badge ${tipoBadge}`} style={{marginRight:8}}>{tipo}</span>
+          <h3>Registrar {tipo.toLowerCase()}</h3>
+          <button className="modal-close" onClick={onClose}><Icon name="close"/></button>
+        </div>
+        <div className="modal-body">
+          {err && <div style={{padding:"8px 12px",background:"var(--danger-soft)",color:"var(--danger)",borderRadius:6,fontSize:12.5}}>{err}</div>}
+          <div className="field">
+            <label>Material</label>
+            <select value={matId} onChange={e => setMatId(e.target.value)}>
+              {materiales.map(m => <option key={m.id} value={m.id}>{m.codigo} — {m.nombre}</option>)}
+            </select>
+          </div>
+          {mat && (
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:10,background:"var(--bg-subtle)",borderRadius:6,fontSize:12}}>
+              <Icon name="box"/>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:500}}>{mat.nombre}</div>
+                <div className="mono" style={{fontSize:11,color:"var(--fg-faint)"}}>
+                  Stock actual: {mat.stock_actual} · {matUbText(mat)}
+                </div>
+              </div>
+              {mat.stock_actual <= mat.stock_minimo && <span className="badge warn">Bajo mínimo</span>}
+            </div>
+          )}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <div className="field">
+              <label>Cantidad</label>
+              <input type="number" min="1" value={cantidad} onChange={e => setCantidad(e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>Responsable</label>
+              <input value={responsable} onChange={e => setResponsable(e.target.value)} placeholder="Nombre completo"/>
+            </div>
+          </div>
+          {tipo === "Transferencia" ? (
+            <div className="field">
+              <label>Ubicación destino</label>
+              <select value={ubDest} onChange={e => setUbDest(e.target.value)}>
+                {ubicaciones.map(u => <option key={u.id} value={u.id}>{ubTextFull(u)}</option>)}
+              </select>
+            </div>
+          ) : (
+            <div className="field">
+              <label>{tipo==="Salida" ? "Orden de trabajo / área" : "Referencia / OC"}</label>
+              <input value={otArea} onChange={e => setOtArea(e.target.value)}
+                placeholder={tipo==="Salida" ? "OT-5522 · Línea 1" : "OC-2210"}/>
+            </div>
+          )}
+          <div className="field">
+            <label>Observaciones</label>
+            <textarea value={obs} onChange={e => setObs(e.target.value)} placeholder="Opcional…"/>
+          </div>
+        </div>
+        <div className="modal-foot">
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}>
+            {saving ? <span className="spinner"/> : <Icon name="check"/>}
+            Registrar {tipo.toLowerCase()}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Movimientos ──────────────────────────────────────────────────────────────
+function Movimientos({ materiales, movimientos, ubicaciones, onRefresh }) {
+  const [tab, setTab] = React.useState("todos");
+  const [openNew, setOpenNew] = React.useState(null);
+
+  const filtered = movimientos.filter(mv => {
+    if (tab === "todos") return true;
+    if (tab === "entradas") return mv.tipo_movimiento === "Entrada";
+    if (tab === "salidas") return mv.tipo_movimiento === "Salida";
+    if (tab === "transferencias") return mv.tipo_movimiento === "Transferencia";
+    return true;
+  });
+
+  const saved = () => { setOpenNew(null); onRefresh(); };
+
+  return (
+    <div>
+      {openNew && <MovimientoModal tipo={openNew} materiales={materiales} ubicaciones={ubicaciones} onClose={() => setOpenNew(null)} onSaved={saved}/>}
+      <div className="toolbar">
+        <h1>Movimientos</h1>
+        <div className="crumbs"><span>Corpoelec</span><span className="sep">/</span><span>Entradas y salidas</span></div>
+        <div className="spacer"/>
+        <button className="btn btn-sm" onClick={() => setOpenNew("Entrada")}><Icon name="arrowIn"/>Entrada</button>
+        <button className="btn btn-sm" onClick={() => setOpenNew("Salida")}><Icon name="arrowOut"/>Salida</button>
+        <button className="btn btn-sm" onClick={() => setOpenNew("Transferencia")}><Icon name="swap"/>Transferencia</button>
+      </div>
+      <div className="tabs">
+        <button className={tab==="todos"?"on":""} onClick={() => setTab("todos")}>Todos ({movimientos.length})</button>
+        <button className={tab==="entradas"?"on":""} onClick={() => setTab("entradas")}>Entradas</button>
+        <button className={tab==="salidas"?"on":""} onClick={() => setTab("salidas")}>Salidas</button>
+        <button className={tab==="transferencias"?"on":""} onClick={() => setTab("transferencias")}>Transferencias</button>
+      </div>
+      <div className="body">
+        <div className="panel">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{width:60}}>ID</th>
+                <th style={{width:140}}>Fecha</th>
+                <th style={{width:120}}>Tipo</th>
+                <th>Material</th>
+                <th style={{width:60}}>Cant.</th>
+                <th style={{width:140}}>Responsable</th>
+                <th>OT / Área</th>
+                <th>Origen/Destino</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(mv => {
+                const tipoBadge = mv.tipo_movimiento==="Entrada"?"ok":mv.tipo_movimiento==="Salida"?"info":"warn";
+                const tipoIcon = mv.tipo_movimiento==="Entrada"?"arrowIn":mv.tipo_movimiento==="Salida"?"arrowOut":"swap";
+                return (
+                  <tr key={mv.id}>
+                    <td className="mono" style={{color:"var(--fg-faint)",fontSize:11.5}}>{mv.id}</td>
+                    <td className="mono" style={{fontSize:11.5}}>{mv.fecha_hora?.slice(0,16)}</td>
+                    <td><span className={`badge ${tipoBadge}`}><Icon name={tipoIcon}/>{mv.tipo_movimiento}</span></td>
+                    <td>
+                      <div style={{fontWeight:500}}>{mv.nombre}</div>
+                      <div className="mono" style={{fontSize:11,color:"var(--fg-faint)"}}>{mv.codigo}</div>
+                    </td>
+                    <td className="num" style={{fontWeight:500}}>{mv.cantidad}</td>
+                    <td style={{fontSize:12.5}}>{mv.responsable_retiro}</td>
+                    <td style={{fontSize:12.5,color:"var(--fg-muted)"}}>{mv.orden_trabajo_area}</td>
+                    <td style={{fontSize:11.5,color:"var(--fg-muted)"}}>
+                      {mv.tipo_movimiento==="Transferencia"
+                        ? <span>{mv.origen_txt?.split("/")[1]||""} → {mv.destino_txt?.split("/")[1]||""}</span>
+                        : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && <tr><td colSpan="8" className="empty">Sin movimientos</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Kárdex ───────────────────────────────────────────────────────────────────
+function Kardex({ materiales, movimientos, onRefresh }) {
+  const [matFiltro, setMatFiltro] = React.useState("");
+  const [desde, setDesde] = React.useState("");
+  const [hasta, setHasta] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [rows, setRows] = React.useState(movimientos);
+
+  const buscar = async () => {
+    setLoading(true);
+    const matId = matFiltro ? materiales.find(m => m.codigo === matFiltro)?.id : null;
+    const r = await getApi().get_movimientos(matId || null, desde || null, hasta || null, null);
+    setRows(r);
+    setLoading(false);
+  };
+
+  React.useEffect(() => { setRows(movimientos); }, [movimientos]);
+
+  const exportPDF = async () => {
+    const r = await getApi().exportar_pdf("kardex", desde || null, hasta || null);
+    if (r.ok) getApi().abrir_carpeta_exportacion();
+  };
+  const exportXLSX = async () => {
+    const r = await getApi().exportar_excel("kardex", desde || null, hasta || null);
+    if (r.ok) getApi().abrir_carpeta_exportacion();
+  };
+
+  return (
+    <div>
+      <div className="toolbar">
+        <h1>Kárdex</h1>
+        <div className="crumbs"><span>Corpoelec</span><span className="sep">/</span><span>Historial completo de movimientos</span></div>
+        <div className="spacer"/>
+        <button className="btn btn-sm" onClick={exportPDF}><Icon name="download"/>PDF</button>
+        <button className="btn btn-sm" onClick={exportXLSX}><Icon name="download"/>Excel</button>
+      </div>
+      <div className="body">
+        <div className="panel">
+          <div className="panel-head"><h2>Historial de movimientos</h2><span className="sub">trazabilidad completa</span></div>
+          <div style={{padding:12,borderBottom:"1px solid var(--line)",display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
+            <div className="field" style={{flex:1,minWidth:200}}>
+              <label>Material</label>
+              <select value={matFiltro} onChange={e => setMatFiltro(e.target.value)}>
+                <option value="">Todos</option>
+                {materiales.map(m => <option key={m.id} value={m.codigo}>{m.codigo} — {m.nombre}</option>)}
+              </select>
+            </div>
+            <div className="field" style={{width:140}}>
+              <label>Desde</label>
+              <input type="date" value={desde} onChange={e => setDesde(e.target.value)}/>
+            </div>
+            <div className="field" style={{width:140}}>
+              <label>Hasta</label>
+              <input type="date" value={hasta} onChange={e => setHasta(e.target.value)}/>
+            </div>
+            <button className="btn btn-sm btn-primary" onClick={buscar} disabled={loading}>
+              {loading ? <span className="spinner"/> : <Icon name="search"/>}Filtrar
+            </button>
+          </div>
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{width:60}}>ID</th>
+                <th style={{width:140}}>Fecha y hora</th>
+                <th style={{width:120}}>Tipo</th>
+                <th>Material</th>
+                <th style={{width:60}}>Cant.</th>
+                <th style={{width:140}}>Responsable</th>
+                <th>OT / Área</th>
+                <th>Origen/Destino</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(mv => {
+                const tipoBadge = mv.tipo_movimiento==="Entrada"?"ok":mv.tipo_movimiento==="Salida"?"info":"warn";
+                return (
+                  <tr key={mv.id}>
+                    <td className="mono" style={{color:"var(--fg-faint)",fontSize:11.5}}>{mv.id}</td>
+                    <td className="mono" style={{fontSize:11.5}}>{mv.fecha_hora?.slice(0,16)}</td>
+                    <td><span className={`badge ${tipoBadge}`}>{mv.tipo_movimiento}</span></td>
+                    <td>
+                      <div style={{fontWeight:500,fontSize:13}}>{mv.nombre}</div>
+                      <div className="mono" style={{fontSize:11,color:"var(--fg-faint)"}}>{mv.codigo}</div>
+                    </td>
+                    <td className="num">{mv.cantidad}</td>
+                    <td style={{fontSize:12.5}}>{mv.responsable_retiro}</td>
+                    <td style={{fontSize:12.5,color:"var(--fg-muted)"}}>{mv.orden_trabajo_area}</td>
+                    <td style={{fontSize:11.5,color:"var(--fg-muted)"}}>
+                      {mv.origen_txt || mv.destino_txt
+                        ? `${mv.origen_txt||""} → ${mv.destino_txt||""}`
+                        : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+              {rows.length === 0 && <tr><td colSpan="8" className="empty">Sin registros</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Consultas ────────────────────────────────────────────────────────────────
+function Consultas({ materiales, movimientos }) {
+  const [query, setQuery] = React.useState("");
+  const results = materiales.filter(m => {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    return m.codigo.toLowerCase().includes(q) || m.nombre.toLowerCase().includes(q) ||
+           (m.descripcion_tecnica||"").toLowerCase().includes(q) ||
+           (m.modulo_pasillo||"").toLowerCase().includes(q);
+  });
+
+  const exportXLSX = async () => {
+    const r = await getApi().exportar_excel("inventario");
+    if (r.ok) getApi().abrir_carpeta_exportacion();
+  };
+  const exportPDF = async () => {
+    const r = await getApi().exportar_pdf("inventario");
+    if (r.ok) getApi().abrir_carpeta_exportacion();
+  };
+  const exportKardexXLSX = async () => {
+    const r = await getApi().exportar_excel("kardex");
+    if (r.ok) getApi().abrir_carpeta_exportacion();
+  };
+  const exportKardexPDF = async () => {
+    const r = await getApi().exportar_pdf("kardex");
+    if (r.ok) getApi().abrir_carpeta_exportacion();
+  };
+
+  return (
+    <div>
+      <div className="toolbar">
+        <h1>Consultas y reportes</h1>
+        <div className="crumbs"><span>Corpoelec</span><span className="sep">/</span><span>Búsqueda y exportación</span></div>
+        <div className="spacer"/>
+        <button className="btn btn-sm" onClick={exportPDF}><Icon name="download"/>PDF Existencias</button>
+        <button className="btn btn-primary btn-sm" onClick={exportXLSX}><Icon name="download"/>Excel Existencias</button>
+      </div>
+      <div className="body">
+        <div className="panel" style={{marginBottom:16}}>
+          <div className="panel-head"><h2>Buscador rápido</h2><span className="sub">filtra por nombre, código, ubicación</span></div>
+          <div style={{padding:16}}>
+            <div className="search" style={{width:"100%",height:40}}>
+              <Icon name="search"/>
+              <input placeholder="Buscar en todo el inventario…" value={query} onChange={e => setQuery(e.target.value)} style={{fontSize:14}}/>
+            </div>
+          </div>
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:16}}>
+          {[
+            {title:"Reporte de existencias", desc:"Inventario completo con stock, ubicación y estado", onXlsx:exportXLSX, onPdf:exportPDF},
+            {title:"Stock bajo mínimo",      desc:"Materiales que requieren reposición",              onXlsx:async()=>{const r=await getApi().exportar_excel("inventario");if(r.ok)getApi().abrir_carpeta_exportacion();}, onPdf:exportPDF},
+            {title:"Movimientos Kárdex",     desc:"Historial completo de movimientos",               onXlsx:exportKardexXLSX, onPdf:exportKardexPDF},
+          ].map(r => (
+            <div className="panel" key={r.title} style={{padding:14}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}><Icon name="download"/><div style={{fontWeight:500}}>{r.title}</div></div>
+              <div style={{fontSize:12.5,color:"var(--fg-muted)",marginBottom:10}}>{r.desc}</div>
+              <div style={{display:"flex",gap:6}}>
+                <button className="btn btn-sm" style={{flex:1,justifyContent:"center"}} onClick={r.onXlsx}>Excel</button>
+                <button className="btn btn-sm" style={{flex:1,justifyContent:"center"}} onClick={r.onPdf}>PDF</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="panel">
+          <div className="panel-head"><h2>Resultados</h2><span className="sub">{results.length} materiales</span></div>
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{width:150}}>Código</th>
+                <th>Material</th>
+                <th style={{width:140}}>Categoría</th>
+                <th style={{width:80}}>Stock</th>
+                <th style={{width:140}}>Estado</th>
+                <th>Ubicación</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.map(m => (
+                <tr key={m.id}>
+                  <td className="mono" style={{fontSize:12}}>{m.codigo}</td>
+                  <td><span style={{fontWeight:500}}>{m.nombre}</span></td>
+                  <td><span className="badge neutral">{m.categoria}</span></td>
+                  <td className="num" style={{color:m.stock_actual<m.stock_minimo?"var(--warn)":"inherit"}}>{m.stock_actual}</td>
+                  <td><EstadoBadge estado={m.estado}/></td>
+                  <td className="mono" style={{fontSize:11.5,color:"var(--fg-muted)"}}>{matUbText(m)}</td>
+                </tr>
+              ))}
+              {results.length === 0 && <tr><td colSpan="6" className="empty">Sin resultados</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Config ───────────────────────────────────────────────────────────────────
+function ConfigScreen({ dbInfo, onRefresh, dark, setDark, showToast }) {
+  const [credits, setCredits] = React.useState(false);
+  const [importing, setImporting] = React.useState(false);
+
+  const respaldar = async () => {
+    const r = await getApi().respaldar_db();
+    if (r.ok) { getApi().abrir_carpeta_exportacion(); }
+  };
+
+  const importarExcel = async () => {
+    const sel = await getApi().seleccionar_excel();
+    if (!sel.ok) return;
+    setImporting(true);
+    const r = await getApi().importar_excel(sel.path);
+    setImporting(false);
+    if (r.ok) {
+      onRefresh();
+      const msg = `Importados: ${r.importados}${r.omitidos ? ` · Omitidos (duplicados): ${r.omitidos}` : ""}`;
+      showToast(msg, "ok");
+    } else {
+      showToast(r.error || "Error al importar", "err");
+    }
+  };
+
+  return (
+    <>
+    <div>
+      <div className="toolbar">
+        <h1>Configuración</h1>
+        <div className="crumbs"><span>Sistema</span><span className="sep">/</span><span>Preferencias locales</span></div>
+      </div>
+      <div className="body">
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+          <div className="panel">
+            <div className="panel-head"><h2>Base de datos</h2><span className="sub">SQLite local</span></div>
+            <div className="panel-body">
+              <dl className="kv">
+                <dt>Ruta</dt><dd className="mono" style={{fontSize:11,wordBreak:"break-all"}}>{dbInfo?.db_path || "…"}</dd>
+                <dt>Tamaño</dt><dd className="mono" style={{fontSize:12}}>{dbInfo?.db_size_kb || 0} KB</dd>
+                <dt>Materiales</dt><dd className="mono" style={{fontSize:12}}>{dbInfo?.mat_count || 0}</dd>
+                <dt>Movimientos</dt><dd className="mono" style={{fontSize:12}}>{dbInfo?.mov_count || 0}</dd>
+                <dt>Modo</dt><dd><span className="badge ok"><span className="dot"/>Portable</span></dd>
+              </dl>
+              <div style={{display:"flex",gap:6,marginTop:14,flexWrap:"wrap"}}>
+                <button className="btn btn-sm" onClick={respaldar}><Icon name="download"/>Respaldar</button>
+                <button className="btn btn-sm" onClick={() => getApi().abrir_carpeta_exportacion()}>Abrir carpeta</button>
+                <button className="btn btn-sm btn-primary" onClick={importarExcel} disabled={importing}>
+                  {importing ? <span className="spinner"/> : <Icon name="download"/>}
+                  {importing ? "Importando…" : "Importar Excel"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-head"><h2>Imágenes</h2><span className="sub">carpeta local /assets/images</span></div>
+            <div className="panel-body">
+              <dl className="kv">
+                <dt>Ruta</dt><dd className="mono" style={{fontSize:11,wordBreak:"break-all"}}>{dbInfo?.assets_path || "…"}</dd>
+                <dt>Archivos</dt><dd className="mono" style={{fontSize:12}}>{dbInfo?.img_count || 0} imágenes</dd>
+                <dt>Espacio usado</dt><dd className="mono" style={{fontSize:12}}>{dbInfo?.img_size_mb || 0} MB</dd>
+              </dl>
+              <div style={{marginTop:14,padding:10,background:"var(--info-soft)",borderRadius:6,fontSize:12,color:"var(--info)"}}>
+                Las imágenes se almacenan como archivos físicos; la base de datos guarda únicamente la ruta relativa.
+              </div>
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-head"><h2>Apariencia</h2><span className="sub">preferencias visuales</span></div>
+            <div className="panel-body">
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"4px 0"}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:500}}>Modo oscuro</div>
+                  <div style={{fontSize:11.5,color:"var(--fg-faint)",marginTop:2}}>Cambia entre tema claro y oscuro</div>
+                </div>
+                <Toggle checked={dark} onChange={setDark}/>
+              </div>
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-head"><h2>Aplicación</h2><span className="sub">portable — Zero Install</span></div>
+            <div className="panel-body">
+              <dl className="kv">
+                <dt>Versión</dt><dd className="mono" style={{fontSize:12}}>1.0.0</dd>
+                <dt>Plataforma</dt><dd className="mono" style={{fontSize:12}}>Windows / Linux</dd>
+                <dt>Modo red</dt><dd><span className="badge neutral">Individual (sin servidor)</span></dd>
+                <dt>Motor</dt><dd className="mono" style={{fontSize:12}}>Python + PyWebView + SQLite</dd>
+              </dl>
+              <div style={{marginTop:16}}>
+                <button className="btn btn-sm btn-ghost" onClick={() => setCredits(true)}>
+                  Créditos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {credits && (
+      <div className="backdrop" onClick={() => setCredits(false)}>
+        <div className="modal" style={{width:320}} onClick={e => e.stopPropagation()}>
+          <div className="modal-head">
+            <h3>Créditos</h3>
+            <button className="modal-close" onClick={() => setCredits(false)}><Icon name="close"/></button>
+          </div>
+          <div className="modal-body" style={{alignItems:"center",textAlign:"center",padding:"28px 24px",gap:18}}>
+            <img src="logo-servicio-corpoelec.im1761941416671im.avif" alt="Corpoelec" style={{height:38,maxWidth:160}}/>
+            <div>
+              <div style={{fontWeight:600,fontSize:15,marginBottom:4}}>SGIP v1.0.0</div>
+              <div style={{fontSize:12,color:"var(--fg-muted)"}}>Sistema de Gestión de Inventario para Plantas</div>
+            </div>
+            <div style={{fontSize:13,color:"var(--fg-muted)",lineHeight:1.6}}>
+              Desarrollado por<br/>
+              <span style={{fontWeight:600,fontSize:14,color:"var(--fg)"}}>Ing. Moises Jimenez</span>
+            </div>
+          </div>
+          <div className="modal-foot">
+            <button className="btn btn-sm btn-primary" onClick={() => setCredits(false)}>Cerrar</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
+  );
+}
+
+// ─── Root App ─────────────────────────────────────────────────────────────────
+function App() {
+  const [ready, setReady] = React.useState(false);
+  const [dark, setDarkState] = React.useState(() => localStorage.getItem("sgip-theme") === "dark");
+  const [route, setRoute] = React.useState("dashboard");
+  const [materiales, setMateriales] = React.useState([]);
+  const [movimientos, setMovimientos] = React.useState([]);
+  const [ubicaciones, setUbicaciones] = React.useState([]);
+  const [dbInfo, setDbInfo] = React.useState({});
+  const [toast, setToast] = React.useState(null);
+
+  const setDark = (val) => {
+    setDarkState(val);
+    document.documentElement.setAttribute("data-theme", val ? "dark" : "");
+    localStorage.setItem("sgip-theme", val ? "dark" : "light");
+  };
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "");
+  }, []);
+
+  const showToast = (msg, type = "ok") => setToast({ msg, type });
+
+  const loadAll = React.useCallback(async () => {
+    const [mats, movs, ubs, info] = await Promise.all([
+      getApi().get_materiales(),
+      getApi().get_movimientos(),
+      getApi().get_ubicaciones(),
+      getApi().get_db_info(),
+    ]);
+    setMateriales(mats);
+    setMovimientos(movs);
+    setUbicaciones(ubs);
+    setDbInfo(info);
+  }, []);
+
+  React.useEffect(() => {
+    if (window.pywebview?.api) { setReady(true); loadAll(); return; }
+    const h = () => { setReady(true); loadAll(); };
+    window.addEventListener("pywebviewready", h);
+    return () => window.removeEventListener("pywebviewready", h);
+  }, []);
+
+  const goto = (r) => setRoute(r);
+
+  const lowCount = materiales.filter(m => m.stock_actual < m.stock_minimo).length;
+  const stats = { mat_count: materiales.length, mov_count: movimientos.length };
+
+
+  if (!ready) {
+    return (
+      <div className="loading-overlay">
+        <div className="spinner" style={{width:32,height:32,borderWidth:3}}/>
+        <div>Iniciando SGIP…</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="desktop">
+      {toast && <Toast msg={toast.msg} type={toast.type} onDone={() => setToast(null)}/>}
+      <Window stats={stats}>
+        <div className="shell">
+          <Sidebar route={route} setRoute={setRoute} lowCount={lowCount}/>
+          <main className="main">
+            {route === "dashboard"   && <Dashboard materiales={materiales} movimientos={movimientos} goto={(r) => setRoute(r)}/>}
+            {route === "inventario"  && <Inventario materiales={materiales} ubicaciones={ubicaciones} onRefresh={loadAll}/>}
+            {route === "movimientos" && <Movimientos materiales={materiales} movimientos={movimientos} ubicaciones={ubicaciones} onRefresh={loadAll}/>}
+            {route === "consultas"   && <Consultas materiales={materiales} movimientos={movimientos}/>}
+            {route === "kardex"      && <Kardex materiales={materiales} movimientos={movimientos} onRefresh={loadAll}/>}
+            {route === "config"      && <ConfigScreen dbInfo={dbInfo} onRefresh={loadAll} dark={dark} setDark={setDark} showToast={showToast}/>}
+          </main>
+        </div>
+      </Window>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
