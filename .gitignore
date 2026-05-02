@@ -22,6 +22,16 @@ SGIP_kardex_*.pdf
 # Logo antiguo reemplazado
 images.png
 
+# Instaladores / binarios descargados (no pertenecen al repo)
+*.exe
+*.msi
+
+# Documentos sueltos
+*.docx
+
+# Imágenes sueltas no relacionadas al proyecto
+D_NQ_NP_*.webp
+
 # Claude Code
 .claude/
 
